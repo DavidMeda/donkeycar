@@ -57,5 +57,10 @@ def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
         checkpoint_model_path = f'{os.path.splitext(output_path)[0]}.ckpt'
         trainer.save_checkpoint(checkpoint_model_path)
         print("Saved final model to {}".format(checkpoint_model_path))
+    
+    loss_list = [loss.item() for loss in model.loss_history]
+    torch.save(loss_list, model_name+'_loss.pt')
+
+
 
     return model.loss_history

@@ -409,7 +409,7 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def get_model_by_type(model_type: str, cfg: 'Config') -> 'KerasPilot':
+def get_model_by_type(model_type: str, cfg: 'Config', model_path: str) -> 'KerasPilot':
     '''
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
@@ -439,6 +439,13 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> 'KerasPilot':
         # for training.
         from donkeycar.parts.tensorrt import TensorRTLinear
         kl = TensorRTLinear(cfg=cfg)
+    elif model_type == "nvidia":
+        from donkeycar.parts.nvidia import NvidiaModel
+        kl = NvidiaModel(input_shape=input_shape,roi_crop=(cfg.ROI_CROP_TOP,cfg.ROI_CROP_BOTTOM))
+        print("<<<<<<<<<<<<<<<<<<<NVIDIA MODEL<<<<<<<<<<<<<<<<<<<<<<<")
+    elif model_type=="resnet18":
+        from donkeycar.parts.pytorch.torch_utils import get_model_by_type
+        kl = get_model_by_type(model_type, cfg, model_path)
     else:
         raise Exception("Unknown model type {:}, supported types are "
                         "linear, categorical, inferred, tflite_linear, "

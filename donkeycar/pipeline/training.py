@@ -108,17 +108,17 @@ def get_model_train_details(cfg: Config, database: PilotDatabase,
     return model_path, model_num, train_type, is_tflite
 
 
-def train(cfg: Config, tub_paths: str, model: str = None,
-          model_type: str = None, transfer: str = None, comment: str = None) \
-        -> tf.keras.callbacks.History:
+def train(cfg: Config, tub_paths: str, model: str = None, model_type: str = None, transfer: str = None, comment: str = None) -> tf.keras.callbacks.History:
     """
     Train the model
+    model:output model name
+    fransfer: transfer model
     """
     database = PilotDatabase(cfg)
     model_path, model_num, train_type, is_tflite = \
         get_model_train_details(cfg, database, model, model_type)
 
-    kl = get_model_by_type(train_type, cfg)
+    kl = get_model_by_type(train_type, cfg, model_path)
     if transfer:
         kl.load(transfer)
     if cfg.PRINT_MODEL_SUMMARY:
@@ -172,6 +172,6 @@ def train(cfg: Config, tub_paths: str, model: str = None,
         'Config': str(cfg)
     }
     database.add_entry(database_entry)
-    database.write()
+    database.write(os.path.basename(base_path))
 
     return history

@@ -7,7 +7,7 @@ import pandas as pd
 from donkeycar.config import Config
 
 
-FILE = 'database.json'
+FILE = 'database_'
 
 
 class PilotDatabase:
@@ -44,8 +44,9 @@ class PilotDatabase:
         else:
             return pd.DataFrame()
 
-    def write(self):
+    def write(self, name_database: str):
         try:
+            self.path = self.path+name_database+'.json'
             with open(self.path, "w") as data_file:
                 json.dump(self.entries, data_file)
         except Exception as e:
