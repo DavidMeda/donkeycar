@@ -78,8 +78,8 @@ class ImageAugmentation:
     @classmethod
     def create(cls, aug_type: str, config: Config) -> iaa.meta.Augmenter:
         if aug_type == 'CROP':
-            return Augmentations.crop(left=config.ROI_CROP_TOP,
-                                      right=config.ROI_CROP_TOP,
+            return Augmentations.crop(left=config.ROI_CROP_LEFT,
+                                      right=config.ROI_CROP_RIGHT,
                                       bottom=config.ROI_CROP_BOTTOM,
                                       top=config.ROI_CROP_TOP)
         elif aug_type == 'TRAPEZE':
@@ -100,6 +100,30 @@ class ImageAugmentation:
             interval = getattr(config, 'AUG_BLUR_RANGE', (0.0, 3.0))
             logger.info(f'Creating augmentation {aug_type} {interval}')
             return iaa.GaussianBlur(sigma=interval)
+
+        elif aug_type == 'GREYSCALE':
+            interval = getattr(config, 'GREYSCALE',  (0.0, 1.0))
+            logger.info(f'Creating augmentation {aug_type} {interval}')
+            return iaa.Grayscale(alpha=interval) 
+
+        elif aug_type == 'CONTRAST':
+            interval = getattr(config, 'CONTRAST',  (0.5, 2.0))
+            logger.info(f'Creating augmentation {aug_type} {interval}')
+            return iaa.GammaContrast(gamma=interval)
+
+        elif aug_type == 'SHARPEN':
+            interval_alpha = getattr(config, 'SHARPEN1',  (0.0, 1.0))
+            interval_lightness = getattr(config, 'SHARPEN2',  (0.75, 2.0))
+            logger.info(f'Creating augmentation {aug_type} {interval_alpha} {interval_lightness}')
+            return iaa.Sharpen(alpha=interval_alpha, lightness=interval_lightness)
+
+        elif aug_type == 'EMBOSS':
+            interval_alpha = getattr(config, 'EMBOSS1',  (0.0, 1.0))
+            interval_strength = getattr(config, 'EMBOSS2',  (0.5, 1.5))
+            logger.info(f'Creating augmentation {aug_type} {interval_alpha} {interval_strength}')
+            return iaa.Emboss(alpha=interval_alpha, strength=interval_strength)
+
+
 
     def augment(self, img_arr):
         aug_img_arr = self.augmentations.augment_image(img_arr)
