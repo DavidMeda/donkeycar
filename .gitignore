@@ -1,7 +1,9 @@
+install/*
 .vs/
 env/*
 data/*
 dist/*
+a
 
 *.pyc
 .ipynb_checkpoints
