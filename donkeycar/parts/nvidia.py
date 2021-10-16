@@ -9,14 +9,10 @@ from donkeycar.parts.keras import KerasPilot
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.layers import Input, Dense
-from tensorflow.keras.layers import Convolution2D, MaxPooling2D, \
-    BatchNormalization
-from tensorflow.keras.layers import Activation, Dropout, Flatten
-from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import Convolution2D
+from tensorflow.keras.layers import  Dropout, Flatten
 from tensorflow.keras.layers import TimeDistributed as TD
-from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv2DTranspose
-from tensorflow.keras.backend import concatenate
-from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.models import Model
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
@@ -35,9 +31,6 @@ def customArchitecture(num_outputs, input_shape, roi_crop):
     img_in = Input(shape=input_shape, name='img_in')
 
     x = img_in
-    print("<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>")
-    print(x.shape)
-    print("<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>")
     # Dropout rate
     keep_prob = 0.9
     rate = 1 - keep_prob
@@ -102,9 +95,6 @@ class NvidiaModel(KerasPilot):
     def inference(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
-        print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-        print(outputs.shapes)
-        print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         steering = outputs[0]
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]

@@ -17,9 +17,11 @@ import random
 import time
 import signal
 from typing import List, Any, Tuple
-
+import cv2
+import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
+
 
 
 '''
@@ -172,11 +174,14 @@ def load_image(filename, cfg):
     :return np.ndarray:         numpy uint8 image array
     """
     img = load_pil_image(filename, cfg)
-
+    
     if not img:
         return None
 
     img_arr = np.asarray(img)
+    # if cfg.PREPROCESS_IMAGE:
+    #     print("PREPROCESS")
+    #     img_arr = processImage(img_arr)
 
     # If the PIL image is greyscale, the np array will have shape (H, W)
     # Need to add a depth channel by expanding to (H, W, 1)
@@ -442,10 +447,11 @@ def get_model_by_type(model_type: str, cfg: 'Config', model_path: str) -> 'Keras
     elif model_type == "nvidia":
         from donkeycar.parts.nvidia import NvidiaModel
         kl = NvidiaModel(input_shape=input_shape,roi_crop=(cfg.ROI_CROP_TOP,cfg.ROI_CROP_BOTTOM))
-        print("<<<<<<<<<<<<<<<<<<<NVIDIA MODEL<<<<<<<<<<<<<<<<<<<<<<<")
+    
     elif model_type=="resnet18":
         from donkeycar.parts.pytorch.torch_utils import get_model_by_type
         kl = get_model_by_type(model_type, cfg, model_path)
+    
     else:
         raise Exception("Unknown model type {:}, supported types are "
                         "linear, categorical, inferred, tflite_linear, "

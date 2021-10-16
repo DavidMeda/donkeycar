@@ -123,6 +123,11 @@ class ImageAugmentation:
             logger.info(f'Creating augmentation {aug_type} {interval_alpha} {interval_strength}')
             return iaa.Emboss(alpha=interval_alpha, strength=interval_strength)
 
+        elif aug_type == "CANNY_EDGES":
+            interval_alpha = getattr(config, 'CANNY_EDGES',  (0.0, 0.2))
+            logger.info(f'Creating augmentation {aug_type} {interval_alpha}')
+            return iaa.Canny(alpha=interval_alpha)
+
 
 
     def augment(self, img_arr):

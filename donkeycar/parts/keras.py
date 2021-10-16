@@ -104,7 +104,7 @@ class KerasPilot(ABC):
         pass
 
     def evaluate(self, record: TubRecord,
-                 augmentation: 'ImageAugmentation' = None) \
+                 augmentation: 'ImageAugmentation' = True) \
             -> Tuple[Union[float, np.ndarray], ...]:
         # extract model input from record
         x0 = self.x_transform(record)
@@ -199,6 +199,7 @@ class KerasPilot(ABC):
         return self.model
 
     def x_transform(self, record: TubRecord) -> XY:
+        
         img_arr = record.image(cached=True)
         return img_arr
 
@@ -303,6 +304,7 @@ class KerasLinear(KerasPilot):
 
     def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
+
         outputs = self.model.predict(img_arr)
         steering = outputs[0]
         throttle = outputs[1]
