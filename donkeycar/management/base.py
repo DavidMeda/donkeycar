@@ -459,11 +459,14 @@ class Train(BaseCommand):
             from donkeycar.pipeline.training import train
             train(cfg, args.tub, args.model, args.type, args.transfer,args.comment)
         elif framework == 'pytorch':
-            from donkeycar.parts.pytorch.torch_train import train
-            loss = train(cfg, args.tub, args.model, args.type, checkpoint_path=args.checkpoint)
-            print("PRINT FROM base.py")
-            print(type(loss))
-            print(loss)
+            #from donkeycar.parts.pytorch.torch_train import train
+            #train(cfg, args.tub, args.model, args.type, checkpoint_path=args.checkpoint)
+            from donkeycar.parts.pytorch.my_torch_train import train
+            train(cfg, args.tub, args.model, args.type)
+
+
+            # print(type(loss))
+            # print(loss)
         else:
             print(f"Unrecognized framework: {framework}. Please specify one of "
                   f"'tensorflow' or 'pytorch'")

@@ -104,7 +104,7 @@ class KerasPilot(ABC):
         pass
 
     def evaluate(self, record: TubRecord,
-                 augmentation: 'ImageAugmentation' = True) \
+                 augmentation: 'ImageAugmentation' = None) \
             -> Tuple[Union[float, np.ndarray], ...]:
         # extract model input from record
         x0 = self.x_transform(record)

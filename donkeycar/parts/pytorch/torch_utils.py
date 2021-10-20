@@ -1,7 +1,7 @@
 import os
 
 
-def get_model_by_type(model_type, cfg, checkpoint_path=None):
+def get_model_by_type(model_type, cfg, model_path=None):
     '''
     given the string model_type and the configuration settings in cfg
     create a Torch model and return it.
@@ -19,13 +19,21 @@ def get_model_by_type(model_type, cfg, checkpoint_path=None):
         # the model is pre-trained on ImageNet
         input_shape = (cfg.BATCH_SIZE, 3, 224, 224)
         model = ResNet18(input_shape=input_shape)
+
+    elif model_type=='VGG':
+        from donkeycar.parts.pytorch.VGG import VGG
+        input_shape = (cfg.BATCH_SIZE, 3, 224, 224)
+        model = VGG(input_shape=input_shape)
+        model.load_model_trained(model_path, 2)
+        print("model_type è: ", model_type)
+
     else:
         raise Exception("Unknown model type {:}, supported types are "
                         "resnet18"
                         .format(model_type))
 
-    if checkpoint_path:
-        print("Loading model from checkpoint {}".format(checkpoint_path))
-        model.load_from_checkpoint(checkpoint_path)
+    # if checkpoint_path:
+    #     print("Loading model from checkpoint {}".format(checkpoint_path))
+    #     model.load_from_checkpoint(checkpoint_path)
 
     return model

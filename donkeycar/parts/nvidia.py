@@ -8,13 +8,14 @@ from donkeycar.pipeline.types import TubRecord
 from donkeycar.parts.keras import KerasPilot
 import tensorflow as tf
 from tensorflow import keras
+from donkeycar.config import Config
 from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.layers import Convolution2D
 from tensorflow.keras.layers import  Dropout, Flatten
 from tensorflow.keras.layers import TimeDistributed as TD
 from tensorflow.keras.models import Model
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
-
+from donkeycar.pipeline.augmentations import ImageAugmentation
 
 XY = Union[float, np.ndarray, Tuple[float, ...], Tuple[np.ndarray, ...]]
 
@@ -83,10 +84,11 @@ def customArchitecture(num_outputs, input_shape, roi_crop):
     return model
 
 class NvidiaModel(KerasPilot):
-    def __init__(self, num_outputs=2, input_shape=(120, 160, 3), roi_crop=(0, 0), *args, **kwargs):
+    def __init__(self, cfg: Config, num_outputs=2, input_shape=(120, 160, 3), roi_crop=(0, 0), *args, **kwargs):
         super(NvidiaModel, self).__init__(*args, **kwargs)
         self.model = customArchitecture(num_outputs, input_shape, roi_crop)
         self.compile()
+        self.augmentation = ImageAugmentation(cfg)
 
     def compile(self):
         self.model.compile(optimizer="adam",
@@ -110,7 +112,11 @@ class NvidiaModel(KerasPilot):
             return {'n_outputs0': angle, 'n_outputs1': throttle}
         else:
             raise TypeError('Expected tuple')
-
+    def x_transform(self, record: TubRecord) -> XY:
+        img_arr = record.image(cached=True)
+        #it's a preprocessing image
+        img_arr_aug = self.augmentation.augment(img_arr)                                                                                                         
+        return img_arr_aug
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape

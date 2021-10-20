@@ -179,6 +179,8 @@ def load_image(filename, cfg):
         return None
 
     img_arr = np.asarray(img)
+    #normaliza between 0 and 1
+    #img_arr = (img_arr - np.min(img_arr))/np.ptp(img_arr)
     # if cfg.PREPROCESS_IMAGE:
     #     print("PREPROCESS")
     #     img_arr = processImage(img_arr)
@@ -425,7 +427,6 @@ def get_model_by_type(model_type: str, cfg: 'Config', model_path: str) -> 'Keras
 
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
-    print("\"get_model_by_type\" model Type is: {}".format(model_type))
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
     kl: KerasPilot
@@ -446,17 +447,22 @@ def get_model_by_type(model_type: str, cfg: 'Config', model_path: str) -> 'Keras
         kl = TensorRTLinear(cfg=cfg)
     elif model_type == "nvidia":
         from donkeycar.parts.nvidia import NvidiaModel
-        kl = NvidiaModel(input_shape=input_shape,roi_crop=(cfg.ROI_CROP_TOP,cfg.ROI_CROP_BOTTOM))
+        kl = NvidiaModel(cfg, input_shape=input_shape,roi_crop=(cfg.ROI_CROP_TOP,cfg.ROI_CROP_BOTTOM))
     
     elif model_type=="resnet18":
         from donkeycar.parts.pytorch.torch_utils import get_model_by_type
         kl = get_model_by_type(model_type, cfg, model_path)
+    elif model_type=="VGG":
+        from donkeycar.parts.pytorch.torch_utils import get_model_by_type
+        kl = get_model_by_type(model_type, cfg, model_path)
+    
     
     else:
         raise Exception("Unknown model type {:}, supported types are "
                         "linear, categorical, inferred, tflite_linear, "
                         "tensorrt_linear"
                         .format(model_type))
+    print("<<<<<<\"get_model_by_type\" model Type is: {}<<<<<".format(model_type))
 
     return kl
 

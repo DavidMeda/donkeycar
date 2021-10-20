@@ -1,6 +1,6 @@
 # PyTorch
 import torch
-from torch.utils.data import IterableDataset, DataLoader
+from torch.utils.data import IterableDataset, DataLoader, Dataset
 from donkeycar.utils import train_test_split
 from donkeycar.parts.tub_v2 import Tub
 from torchvision import transforms
@@ -8,6 +8,7 @@ from typing import List, Any
 from donkeycar.pipeline.types import TubRecord, TubDataset
 from donkeycar.pipeline.sequence import TubSequence
 import pytorch_lightning as pl
+import numpy as np
 
 
 def get_default_transform(for_video=False, for_inference=False):
@@ -33,68 +34,66 @@ def get_default_transform(for_video=False, for_inference=False):
         input_size = (112, 112)
 
     transform = transforms.Compose([
+        transforms.CenterCrop((90,160)),#simil crop 
+        transforms.Grayscale(3),
         transforms.Resize(input_size),
-        transforms.ToTensor(),
+        transforms.ToTensor(), #normalize between [0,1]
         transforms.Normalize(mean=mean, std=std)
     ])
 
     return transform
 
 
-class TorchTubDataset(IterableDataset):
+class myDataset(Dataset):
     '''
     Loads the dataset, and creates a train/test split.
     '''
-
     def __init__(self, config, records: List[TubRecord], transform=None):
         """Create a PyTorch Tub Dataset
-
         Args:
             config (object): the configuration information
             records (List[TubRecord]): a list of tub records
             transform (function, optional): a transform to apply to the data
         """
-        self.config = config
-
+        self.records = records
+        self.config = config 
+        self.size = len(records)
         # Handle the transforms
         if transform:
             self.transform = transform
         else:
             self.transform = get_default_transform()
+        #self.sequence = TubSequence(records)
+        #self.x, self.y = self._create_pipeline()
+        #self.pipeline = self._create_pipeline
+             
+        
+        #self.x = torch.transpose(self.x, 1, 0)
+    
+    def __getitem__(self, index):
+        # self.x = []
+        # self.y= []
+        # for record in self.records:
+            # y
+        angle: float = self.records[index].underlying['user/angle']
+        throttle: float = self.records[index].underlying['user/throttle']
+        labels = torch.tensor([angle, throttle], dtype=torch.float)
+        # Normalize to be between [0, 1]
+        # angle and throttle are originally between [-1, 1]
+        labels = (labels + 1) / 2
+        # self.y.append(labels)
 
-        self.sequence = TubSequence(records)
-        self.pipeline = self._create_pipeline()
+        # x
+        img = self.records[index].image(cached=True, as_nparray=False)
+        # self.x.append(self.transform(img))
+        # return self.x[index], self.y[index]
+        return self.transform(img), labels
 
-    def _create_pipeline(self):
-        """ This can be overridden if more complicated pipelines are
-            required """
-
-        def y_transform(record: TubRecord):
-            angle: float = record.underlying['user/angle']
-            throttle: float = record.underlying['user/throttle']
-            predictions = torch.tensor([angle, throttle], dtype=torch.float)
-
-            # Normalize to be between [0, 1]
-            # angle and throttle are originally between [-1, 1]
-            predictions = (predictions + 1) / 2
-            return predictions
-
-        def x_transform(record: TubRecord):
-            # Loads the result of Image.open()
-            img_arr = record.image(cached=True, as_nparray=False)
-            return self.transform(img_arr)
-
-        # Build pipeline using the transformations
-        pipeline = self.sequence.build_pipeline(x_transform=x_transform,
-                                                y_transform=y_transform)
-
-        return pipeline
-
-    def __iter__(self):
-        return iter(self.pipeline)
+    def __len__(self):
+        return self.size
 
 
-class TorchTubDataModule(pl.LightningDataModule):
+class TorchTubDataModule():
 
     def __init__(self, config: Any, tub_paths: List[str], transform=None):
         """Create a PyTorch Lightning Data Module to contain all data loading logic
@@ -116,8 +115,7 @@ class TorchTubDataModule(pl.LightningDataModule):
         else:
             self.transform = get_default_transform()
 
-        self.tubs: List[Tub] = [Tub(tub_path, read_only=True)
-                                for tub_path in self.tub_paths]
+        self.tubs: List[Tub] = [Tub(tub_path, read_only=True) for tub_path in self.tub_paths]
         self.records: List[TubRecord] = []
         self.setup()
 
@@ -132,19 +130,26 @@ class TorchTubDataModule(pl.LightningDataModule):
         # Loop through all the different tubs and load all the records for each of them
         for tub in self.tubs:
             for underlying in tub:
-                record = TubRecord(self.config, tub.base_path,
-                                   underlying=underlying)
+                record = TubRecord(self.config, tub.base_path, underlying=underlying)
                 self.records.append(record)
 
-        train_records, val_records = train_test_split(
-            self.records, test_size=(1. - self.config.TRAIN_TEST_SPLIT))
+        train_records, val_records = train_test_split(self.records, test_size=(1. - self.config.TRAIN_TEST_SPLIT))
+        # print("len train record: ",len(train_records))
+        # print("len val record: ",len(val_records))
+        # print(type(train_records))
+        # print(type(train_records[0]))
+        # print(train_records[0],"\n")
 
         assert len(val_records) > 0, "Not enough validation data. Add more data"
 
-        self.train_dataset = TorchTubDataset(
-            self.config, train_records, transform=self.transform)
-        self.val_dataset = TorchTubDataset(
-            self.config, val_records, transform=self.transform)
+        self.train_dataset = myDataset(self.config, train_records, transform=self.transform)
+        self.val_dataset = myDataset(self.config, val_records, transform=self.transform)
+        # print("len val_dataset ",len(self.val_dataset))
+        # print("len train_dataset: ",len(self.train_dataset))
+        # img, label = self.train_dataset[0]
+        # print("Shape train_dataset- img:",img.shape," label: ",label.shape)
+        # # print(label,"\n",img)
+        
 
     def train_dataloader(self):
         # The number of workers are set to 0 to avoid errors on Macs and Windows
