@@ -114,6 +114,7 @@ def train(cfg: Config, tub_paths: str, model: str = None, model_type: str = None
     model:output model name
     fransfer: transfer model
     """
+    first_time = time()
     database = PilotDatabase(cfg)
     model_path, model_num, train_type, is_tflite = \
         get_model_train_details(cfg, database, model, model_type)
@@ -128,18 +129,24 @@ def train(cfg: Config, tub_paths: str, model: str = None, model_type: str = None
     all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
     dataset = TubDataset(cfg, all_tub_paths)
     training_records, validation_records = dataset.train_test_split()
+
     print(f'Records # Training {len(training_records)}')
     print(f'Records # Validation {len(validation_records)}')
 
     training_pipe = BatchSequence(kl, cfg, training_records, is_train=True)
     validation_pipe = BatchSequence(kl, cfg, validation_records, is_train=False)
-
+    print(f'Records # BATCH Training {len(training_pipe)}')
+    print(f'Records # BATCH Validation {len(validation_pipe)}')
+    
+    #generators
     dataset_train = training_pipe.create_tf_data().prefetch(
         tf.data.experimental.AUTOTUNE)
     dataset_validate = validation_pipe.create_tf_data().prefetch(
         tf.data.experimental.AUTOTUNE)
     train_size = len(training_pipe)
     val_size = len(validation_pipe)
+    print(f'DATASET #  Training {train_size}')
+    print(f'DATASET #  Validation {val_size}')
 
     assert val_size > 0, "Not enough validation data, decrease the batch " \
                          "size or add more data."
@@ -155,17 +162,19 @@ def train(cfg: Config, tub_paths: str, model: str = None, model_type: str = None
                        min_delta=cfg.MIN_DELTA,
                        patience=cfg.EARLY_STOP_PATIENCE,
                        show_plot=cfg.SHOW_PLOT)
+    
     base_path = os.path.splitext(model_path)[0]
     if is_tflite:
         tf_lite_model_path = f'{base_path}.tflite'
         keras_model_to_tflite(model_path, tf_lite_model_path)
 
+    # database write
     database_entry = {
         'Number': model_num,
         'Name': os.path.basename(base_path),
         'Type': str(kl),
         'Tubs': tub_paths,
-        'Time': time(),
+        'Time': time()-first_time,
         'History': history.history,
         'Transfer': os.path.basename(transfer) if transfer else None,
         'Comment': comment,

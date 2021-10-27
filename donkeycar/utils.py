@@ -429,7 +429,9 @@ def get_model_by_type(model_type: str, cfg: 'Config', model_path: str) -> 'Keras
         model_type = cfg.DEFAULT_MODEL_TYPE
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+    
     kl: KerasPilot
+    #kl = None
     if model_type == "linear":
         kl = KerasLinear(input_shape=input_shape)
     elif model_type == "categorical":
@@ -448,7 +450,10 @@ def get_model_by_type(model_type: str, cfg: 'Config', model_path: str) -> 'Keras
     elif model_type == "nvidia":
         from donkeycar.parts.nvidia import NvidiaModel
         kl = NvidiaModel(cfg, input_shape=input_shape,roi_crop=(cfg.ROI_CROP_TOP,cfg.ROI_CROP_BOTTOM))
-    
+    elif model_type == "lane_model":
+        from donkeycar.parts.lane_model import LaneModel
+        kl = LaneModel(cfg, input_shape=input_shape)
+    # pytorch models
     elif model_type=="resnet18":
         from donkeycar.parts.pytorch.torch_utils import get_model_by_type
         kl = get_model_by_type(model_type, cfg, model_path)

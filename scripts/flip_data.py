@@ -28,7 +28,6 @@ def flip_data(base_paths, portion):
     if type(base_paths) is str:
         base_paths = [base_paths]
     
-    
     for base_path in base_paths:
         #base_path = "C:\\Users\\Thema\\Documents\\projects\\mysim\\data\\lg_data\\circuit_launch_adam_1 - Copia"
         files_path = glob.glob(os.path.join(base_path,"record_*.json"))
@@ -44,7 +43,7 @@ def flip_data(base_paths, portion):
                 
                 with open(files_path[index]) as f:
                     data = json.load(f)
-                    
+             
                 
                 if data["user/angle"] != 0:
                     # print(data)
@@ -55,10 +54,8 @@ def flip_data(base_paths, portion):
                     #cv2.imshow('windo1',image)
                     # name = data["cam/image_array"].split('_')[1]
                     filename = str(num_file)+"_cam_image_array_.jpg"
-                    
                     # print("Filename: "+filename)
                     cv2.imwrite(os.path.join(base_path,filename), image)
-
                     data["user/angle"] = data["user/angle"]*-1
                     data["cam/image_array"] = filename
                     # name = f_name.split('.')[0]

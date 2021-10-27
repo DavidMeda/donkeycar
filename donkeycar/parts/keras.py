@@ -8,6 +8,7 @@ include one or more models to help direct the vehicles motion.
 
 """
 
+from tensorflow.keras.losses import Loss
 from abc import ABC, abstractmethod
 import numpy as np
 from typing import Dict, Any, Tuple, Optional, Union
@@ -33,6 +34,8 @@ ONE_BYTE_SCALE = 1.0 / 255.0
 
 # type of x
 XY = Union[float, np.ndarray, Tuple[float, ...], Tuple[np.ndarray, ...]]
+
+
 
 
 class KerasPilot(ABC):
@@ -157,7 +160,7 @@ class KerasPilot(ABC):
             workers=1,
             use_multiprocessing=False
         )
-            
+        # metrics and plot graph
         if show_plot:
             try:
                 import matplotlib.pyplot as plt
@@ -289,6 +292,26 @@ class KerasCategorical(KerasPilot):
         return shapes
 
 
+class SteeringLoss(Loss):  # inherit parent class
+    # α ∈ [0.1, 1.0], β ∈ [1.0, 2.0], γ ∈ [1.0, 5.0]
+    # β and γ have more impact
+    # on the model than α. Specifically, if we want the model to
+    # be trained faster, γ needs to be set smaller. If we want to
+    # get a more accurate model, β need to be set larger or the
+    # γ needs to be set bigger
+    def __init__(self, alpha, beta, gamma):
+        super().__init__()
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+
+    #compute loss
+    def call(self, y_true, y_pred):
+        return ((1+self.alpha*(tf.abs(y_true)**self.beta))**self.gamma)*(y_true-y_pred)**2
+
+
+
+
 class KerasLinear(KerasPilot):
     """
     The KerasLinear pilot uses one neuron to output a continous value via the
@@ -298,9 +321,11 @@ class KerasLinear(KerasPilot):
     def __init__(self, num_outputs=2, input_shape=(120, 160, 3)):
         super().__init__()
         self.model = default_n_linear(num_outputs, input_shape)
+        self.loss = tf.keras.losses.MeanSquaredError()
+        # self.loss = SteeringLoss(1.0,1.0,1.0)
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer, loss='mse')
+        self.model.compile(optimizer=self.optimizer, loss=self.loss)
 
     def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
@@ -308,8 +333,15 @@ class KerasLinear(KerasPilot):
         outputs = self.model.predict(img_arr)
         steering = outputs[0]
         throttle = outputs[1]
+        # print("output: ", outputs)
+        # print("Throttle: ", throttle[0][0], " Steering: ", steering[0][0])
         return steering[0][0], throttle[0][0]
 
+    def load(self, model_path: str) -> None:
+        print(f'Loading model {model_path} with SteeringLoss')
+        self.model = keras.models.load_model(model_path, compile=False, custom_objects={
+            'loss':self.loss})
+        
     def y_transform(self, record: TubRecord):
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']

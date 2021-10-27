@@ -9,25 +9,6 @@ from donkeycar.parts.pytorch.my_torch_data import get_default_transform
 from torch.nn import MSELoss
 import pytorch_lightning as pl
 
-
-# def load_VGG11(num_classes=2):
-#     # Load the pre-trained model (on ImageNet)
-#     model = models.vgg19(pretrained=True)
-
-#     # Don't allow model feature extraction layers to be modified
-#     for layer in model.parameters():
-#         layer.requires_grad = False
-
-#     # Change the classifier layer
-#     model.classifier._modules['6'] = nn.Linear(4096, num_classes)
-
-#     for param in model.classifier.parameters():
-#         param.requires_grad = True
-
-#     return model
-
-
-
 class VGG(pl.LightningModule):
     def __init__(self, input_shape=(128, 3, 224, 224), output_size=(2,)):
         super().__init__()
@@ -61,36 +42,7 @@ class VGG(pl.LightningModule):
         self.model.load_state_dict(checkpoint['state_dict'])
         print(self.model)
         # return model
-
-    # def training_step(self, batch, batch_idx):
-    #     x, y = batch
-    #     logits = self.model(x)
-
-    #     loss = F.l1_loss(logits, y)
-    #     self.loss_history.append(loss)
-    #     self.log("train_loss", loss)
-
-    #     # Log Metrics
-    #     self.train_loss(logits, y)
-    #     self.log("train_loss", self.train_loss, on_step=False, on_epoch=True)
-
-    #     return loss
-
-    # def validation_step(self, batch, batch_idx):
-    #     x, y = batch
-    #     logits = self.forward(x)
-    #     loss = F.l1_loss(logits, y)
-
-    #     self.log("val_loss", loss)
-
-    #     # Log Metrics
-    #     self.valid_loss(logits, y)
-    #     self.log("valid_loss", self.valid_loss, on_step=False, on_epoch=True)
-
-    # def configure_optimizers(self):
-    #     optimizer = optim.Adam(self.model.parameters(), lr=0.0001, weight_decay=0.0005)
-    #     return optimizer
-
+        
     def run(self, img_arr: np.ndarray, other_arr: np.ndarray = None):
         """
         Donkeycar parts interface to run the part in the loop.
