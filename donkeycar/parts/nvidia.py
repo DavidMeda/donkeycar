@@ -38,6 +38,16 @@ class SteeringLoss(Loss):  # inherit parent class
         return ((1+self.alpha*(tf.abs(y_true)**self.beta))**self.gamma)*(y_true-y_pred)**2
 
 
+class MyLoss(Loss):
+    def __init__(self):
+        super().__init__()
+
+    #compute loss
+    def call(self, y_true, y_pred):
+        # return tf.cond(tf.less(tf.abs(y_pred[0]), 0.1), lambda: ((1/2)+tf.math.exp(tf.abs(y_true)))*tf.abs(y_true-y_pred), lambda: (1+tf.math.exp(tf.abs(y_true)))*tf.abs(y_true-y_pred))
+        return (1+tf.math.exp(tf.abs(y_true)))*tf.abs(y_true-y_pred)
+
+
 # def adjust_input_shape(input_shape, roi_crop):
 #     height = input_shape[0]
 #     new_height = height - roi_crop[0] - roi_crop[1]
@@ -48,57 +58,43 @@ def customArchitecture(num_outputs, input_shape, roi_crop):
 
     # input_shape = adjust_input_shape(input_shape, roi_crop)
     img_in = Input(shape=input_shape, name='img_in')
-
     x = img_in
     # Dropout rate
     keep_prob = 0.9
     rate = 1 - keep_prob
-    
     # Convolutional Layer 1
     x = Convolution2D(filters=24, kernel_size=5, strides=(2, 2), input_shape = input_shape)(x)
     x = Dropout(rate)(x)
-
     # Convolutional Layer 2
     x = Convolution2D(filters=36, kernel_size=5, strides=(2, 2), activation='relu')(x)
     x = Dropout(rate)(x)
-
     # Convolutional Layer 3
     x = Convolution2D(filters=48, kernel_size=5, strides=(2, 2), activation='relu')(x)
     x = Dropout(rate)(x)
-
     # Convolutional Layer 4
     x = Convolution2D(filters=64, kernel_size=3, strides=(1, 1), activation='relu')(x)
     x = Dropout(rate)(x)
-
     # Convolutional Layer 5
     x = Convolution2D(filters=64, kernel_size=3, strides=(1, 1), activation='relu')(x)
     x = Dropout(rate)(x)
-
     # Flatten Layers
     x = Flatten()(x)
-
     # Fully Connected Layer 1
     x = Dense(100, activation='relu')(x)
-
     # Fully Connected Layer 2
     x = Dense(50, activation='relu')(x)
-
     # Fully Connected Layer 3
     x = Dense(25, activation='relu')(x)
-    
     # Fully Connected Layer 4
     x = Dense(10, activation='relu')(x)
-    
     # Fully Connected Layer 5
     x = Dense(5, activation='relu')(x)
     outputs = []
-    
     for i in range(num_outputs):
         # Output layer
         outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
         
     model = Model(inputs=img_in, outputs=outputs)
-    
     return model
 
 
@@ -173,11 +169,11 @@ class NvidiaModel(KerasPilot):
         self.model = customArchitecture(num_outputs, input_shape, roi_crop)
         self.compile()
         self.augmentation = ImageAugmentation(cfg)
-        self.customLoss = SteeringLoss(1.0, 1.0, 1.0)
+        # self.customLoss = MyLoss()
 
     def compile(self):
         self.model.compile(
-            optimizer="adam", loss=self.customLoss, metrics=['accuracy'])
+            optimizer="adam", loss=MyLoss(), metrics=['accuracy'])
         # self.model.compile(optimizer="adam", loss='mse', metrics=['accuracy'] )
 
 
@@ -189,14 +185,14 @@ class NvidiaModel(KerasPilot):
         outputs = self.model.predict(img_arr)
         steering = outputs[0]
         throttle = outputs[1]
-        print("output: ", outputs)
-        print("Throttle: ", throttle[0][0], " Steering: ", steering[0][0])
+        # print("output: ", outputs)
+        # print("Throttle: ", throttle[0][0], " Steering: ", steering[0][0])
         return steering[0][0], throttle[0][0]
     
     def load(self, model_path: str) -> None:
         print(f'Loading model {model_path} with SteeringLoss')
         self.model = keras.models.load_model(model_path, compile=False, custom_objects={
-            'loss': self.customLoss})
+            'loss': MyLoss()})
 
     def y_transform(self, record: TubRecord):
         angle: float = record.underlying['user/angle']

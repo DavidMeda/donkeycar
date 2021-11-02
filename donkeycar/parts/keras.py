@@ -140,9 +140,9 @@ class KerasPilot(ABC):
         self.compile()
 
         callbacks = [
-            EarlyStopping(monitor='val_loss',
-                          patience=patience,
-                          min_delta=min_delta),
+            # EarlyStopping(monitor='val_loss',
+            #               patience=patience,
+            #               min_delta=min_delta),
             ModelCheckpoint(monitor='val_loss',
                             filepath=model_path,
                             save_best_only=True,
@@ -309,9 +309,15 @@ class SteeringLoss(Loss):  # inherit parent class
     def call(self, y_true, y_pred):
         return ((1+self.alpha*(tf.abs(y_true)**self.beta))**self.gamma)*(y_true-y_pred)**2
 
+class MyLoss(Loss):  
+    def __init__(self):
+        super().__init__()
 
-
-
+    #compute loss
+    def call(self, y_true, y_pred):
+        # return tf.cond(tf.less(tf.abs(y_pred[0]), 0.1), lambda: ((1/2)+tf.math.exp(tf.abs(y_true)))*tf.abs(y_true-y_pred), lambda: (1+tf.math.exp(tf.abs(y_true)))*tf.abs(y_true-y_pred))
+        return (1+tf.math.exp(tf.abs(y_true)))*tf.abs(y_true-y_pred)
+        
 class KerasLinear(KerasPilot):
     """
     The KerasLinear pilot uses one neuron to output a continous value via the
@@ -321,7 +327,7 @@ class KerasLinear(KerasPilot):
     def __init__(self, num_outputs=2, input_shape=(120, 160, 3)):
         super().__init__()
         self.model = default_n_linear(num_outputs, input_shape)
-        self.loss = tf.keras.losses.MeanSquaredError()
+        self.loss = MyLoss()
         # self.loss = SteeringLoss(1.0,1.0,1.0)
 
     def compile(self):

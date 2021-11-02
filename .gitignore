@@ -1,4 +1,5 @@
 install/*
+tests/tub/*
 .vs/
 env/*
 data/*

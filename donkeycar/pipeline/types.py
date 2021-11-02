@@ -2,10 +2,12 @@ import os
 from typing import Any, List, Optional, TypeVar, Tuple
 
 import numpy as np
+import pandas as pd
 from donkeycar.config import Config
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.utils import load_image, load_pil_image, train_test_split
 from typing_extensions import TypedDict
+from sklearn.model_selection import train_test_split
 
 X = TypeVar('X', covariant=True)
 
@@ -63,6 +65,9 @@ class TubRecord(object):
 
     def __repr__(self) -> str:
         return repr(self.underlying)
+    
+    def getItem(self):
+        return dict(self.underlying)
 
 
 class TubDataset(object):
@@ -77,21 +82,40 @@ class TubDataset(object):
         self.shuffle = shuffle
         self.tubs: List[Tub] = [Tub(tub_path, read_only=True)
                                 for tub_path in self.tub_paths]
-        self.records: List[TubRecord] = list()
+        # self.records: List[TubRecord] = list()
         self.train_filter = getattr(config, 'TRAIN_FILTER', None)
 
     def train_test_split(self) -> Tuple[List[TubRecord], List[TubRecord]]:
         msg = f'Loading tubs from paths {self.tub_paths}' + f' with filter ' \
               f'{self.train_filter}' if self.train_filter else ''
         print(msg)
-        self.records.clear()
+        # self.records.clear()
+        train_data_list = []
+        val_data_list = []
+        
         for tub in self.tubs:
+            angle_values = []
+            record_dict = []
             for underlying in tub:
-                record = TubRecord(self.config, tub.base_path, underlying)
-                if not self.train_filter or self.train_filter(record):
-                    self.records.append(record)
+                angle_values.append(underlying['user/angle'])
+                record_dict.append(underlying)
+                # record = TubRecord(self.config, tub.base_path, underlying)
+                # if not self.train_filter or self.train_filter(record):
+                #     self.records.append(record)
+            dt = pd.DataFrame()
+            dt['user/angle'] = angle_values
+            dt['record'] = record_dict
+            bins_index = pd.cut(dt['user/angle'], 11, labels=False)
+            train,  validation, _, _ = train_test_split(
+                dt['record'], dt['user/angle'], stratify=bins_index, test_size=(1. - self.config.TRAIN_TEST_SPLIT))
+            train_data = [TubRecord(self.config, tub.base_path, a) for a in train]
+            val_data = [TubRecord(self.config, tub.base_path, a) for a in validation]
+            train_data_list.extend(train_data)
+            val_data_list.extend(val_data)
+        
+        return train_data_list, val_data_list
+        # return train_test_split(self.records, shuffle=self.shuffle,
+        #                         test_size=(1. - self.config.TRAIN_TEST_SPLIT))
 
-        return train_test_split(self.records, shuffle=self.shuffle,
-                                test_size=(1. - self.config.TRAIN_TEST_SPLIT))
 
 

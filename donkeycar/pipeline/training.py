@@ -129,7 +129,6 @@ def train(cfg: Config, tub_paths: str, model: str = None, model_type: str = None
     all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
     dataset = TubDataset(cfg, all_tub_paths)
     training_records, validation_records = dataset.train_test_split()
-
     print(f'Records # Training {len(training_records)}')
     print(f'Records # Validation {len(validation_records)}')
 
