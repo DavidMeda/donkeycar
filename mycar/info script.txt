@@ -1,0 +1,91 @@
+donkey train --tub .\data\right_lane_augmented_normalized --model C:\Users\Thema\Documents\projects\mysim\models\pilot_my_pytorch 
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\sim_gen_roads_pid2_rl_augmented_ok --model .\models\pilot_linear_new_loss_large_dataset.h5    
+
+
+donkey train --tub .\data\right_lane_augmented --model .\models\pilot_nvidia_customLoss_rightlane.h5 (ho usato augmentation, optimazer=adam, )
+
+donkey train --tub .\data\right_lane_augmented,C:\Users\Thema\Documents\projects\mysim\data\lg_data\sim_gen_roads_pid2_rl_augmented_ok --model .\models\pilot_nvidia_customLoss_combinedDataset.h5 (ho usato augmentation ['MULTIPLY', 'CONTRAST', 'BLUR', 'SHARPEN','EMBOSS'], optimazer=adam, )
+
+donkey train --tub .\data\right_lane_augmented --model .\models\pilot_nvidia_customLoss_rightLane_noAugm.h5 ( optimazer=adam, )
+
+donkey train --tub .\data\right_lane_augmented_ok,C:\Users\Thema\Documents\projects\mysim\data\lg_data\sim_gen_roads_pid2_rl_ok --model .\models\pilot_linear_customLoss_combinedDataset.h5 (optimazer=adam, )
+
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\right_lane_augmented_ok,C:\Users\Thema\Documents\projects\mysim\data\lg_data\sim_gen_roads_pid_2_rl_ok --model .\models\pilot_linear_combinedDataset.h5 (optimazer=adam, loss mse)
+
+
+donkey train --tub .\data\right_lane_augmented_ok --model .\models\pilot_nvidia_rightLane.h5  
+
+donkey train --tub .\data\right_lane_augmented_ok --model .\models\pilot_nvidia_tanh_rightLane_steeringLoss.h5   
+----------------------------------------------------------------------------------------------------------------------------
+28/10
+######
+KERAS LINEAR MODEL
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_linear_myLoss_rightLane.h5  (loss originale)
+
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\aaa2.h5  (MIN_DELTA = .0000001, loss originale)
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\aaa05.h5  (MIN_DELTA = .0000001, loss originale scalata di 1/2)
+
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_linear_myLossScalata.h5  (MIN_DELTA = .000001, loss <0.1 scalata di 1/2, loss>=0.1 originale)
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_linear_myLossScalata_2.h5  (MIN_DELTA = .0000001, loss <0.1 scalata di 1/2, loss>=0.1 originale)
+
+donkey train --tub .\data\right_lane_simul_recalibrated,.\data\lg_data\sim_gen_roads_pid_2_rl_ok --model .\models\pilot_linear_myLoss_combinedDataset.h5  (loss originale)  
+donkey train --tub .\data\lg_data\sim_gen_roads_pid_2_rl_ok --model .\models\pilot_linear_myLoss_largeDataset.h5          (solo dataset grande 44mila)
+
+##########
+NVIDIA MODEL
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_nvidia_myLoss_rightLane.h5  --type nvidia (loss originale)
+donkey train --tub .\data\right_lane_simul_recalibrated,.\data\lg_data\sim_gen_roads_pid_2_rl_ok --model .\models\pilot_nvidia_myLoss_combinedDataset.h5 --type nvidia  (loss originale)
+
+--------------------------------------------------------------------------------------------------------------------------------
+29/10
+### keras Linear
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_linear_myLoss_rightLane_200epoch.h5  (myLoss, tnew train e validation, no early stop, 200 epoch)
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\sim_warehouse_manual_recalibrated_ok --model .\models\pilot_linear_myCustom_loss_newDataset_200epoch.h5 --type linear (myLoss, new train e validation, no early stop, 200 epoch, nuovo dataset)
+------------------------------------------------------------------------------------------------------------------------------------
+02/11
+##keras linear
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_linear_myLoss_rightLane_500epoch.h5  (myLoss, train e validation e TEST, no early stop, 500 epoch, mean square and absolut error in validation)
+
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_linear_myLoss_earlyStop50.h5   (myLoss, train e validation e TEST, early stop 50 epoche, 500 epoch, mean square and absolut error in validation)
+-----------------------------------------------------------------------------------------------------------------------------------------
+03/11
+##keras linear
+donkey train --tub .\data\right_lane_simul_recalibrated --model pilot_linear_myLoss_rightLane_testSet.h5     (myLoss, tnew train e validation, early stop 20 patience)
+
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_linear_rightLane_MSELoss_testSet.h5 (riallenamento con test set, early stop patience 20, mseloss, )
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_linear_rightLane_SteeringLoss_testSet.h5  (riallenamento con test set, early stop patience 20, Steeringloss, )
+
+#CONE AVOID
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_1_recalibrated_ok --model .\models\cone_avoid\pilot_linear_myLoss_cone_avoid_1.h5    (early stop 20, customLoss, metric test, epoch max 200)
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_2_recalibrated_ok --model .\models\cone_avoid\pilot_linear_myLoss_cone_avoid_2.h5 (early stop 20, customLoss, metric test, epoch max 200)
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_3_recalibrated_ok --model .\models\cone_avoid\pilot_linear_myLoss_cone_avoid_3.h5 (early stop 20, customLoss, metric test, epoch max 200)
+-----------------------------------------------------------------------------------------------------------------------------------------
+04/11
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_1_recalibrated_ok --model .\models\cone_avoid\pilot_linear_MSEloss_cone_avoid_1.h5    (early stop 20, MSE loss, metric test, epoch max 200)
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_2_recalibrated_ok --model .\models\cone_avoid\pilot_linear_MSEloss_cone_avoid_2.h5 (early stop 20, MSE loss, metric test, epoch max 200)
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_3_recalibrated_ok --model .\models\cone_avoid\pilot_linear_MSEloss_cone_avoid_3.h5 (early stop 20, MSE loss, metric test, epoch max 200)
+
+##esperimento rnn_lstm
+donkey train --tub .\data\right_lane_simul_recalibrated --model .\models\pilot_rnn_lstm_myLoss_rightLane_testSet.h5 (early stop 20, customLoss, metric test, epoch max 200)
+-----------------------------------------------------------------------------------------------------------------------------------------
+08/11
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_1_recalibrated_ok --model .\models\cone_avoid\pilot_linear_MAEloss_cone_avoid_1.h5    (early stop 20, MAE loss, metric test, epoch max 200)
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_1_recalibrated_ok --model .\models\cone_avoid\pilot_linear_Steeringloss_cone_avoid_1.h5    (early stop 20, Steering loss, metric test, epoch max 200)
+-----------------------------------------------------------------------------------------------------------------------------------------
+09/11
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_1_recalibrated_ok,.\data\right_lane_simul_recalibrated --model .\models\cone_avoid\pilot_MSEloss_coneAvoid_rightLane.h5 (early stop 20, MSE loss, metric test, epoch max 200, due dataset, data split: Training 6486,Validation 722,Test 802)
+
+donkey train --tub C:\Users\Thema\Documents\projects\mysim\data\lg_data\hive_cone_avoid_1_recalibrated_ok,.\data\right_lane_simul_recalibrated --model .\models\cone_avoid\pilot_myloss_coneAvoid_rightLane.h5 (early stop 20, myCustom loss, metric test, epoch max 200, due dataset, data split: Training 6486,Validation 722,Test 802) meglio di MSE
+---------------------------------------------------------------------------------------------------------------------------------------------
+15/11
+
+python gym-donkeycar\examples\reinforcement_learning\MyDdqn.py --model .\gym-donkeycar\examples\reinforcement_learning\models\my_pilot_rl_200ep.h5 

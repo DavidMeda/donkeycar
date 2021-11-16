@@ -16,6 +16,13 @@ community contributions.
 
 ![donkeycar](./docs/assets/build_hardware/donkey2.png)
 
+#### My usage
+
+This project is used for my Master degree thesis.
+
+
+
+
 #### Use Donkey if you want to:
 * Make an RC car drive its self.
 * Compete in self driving races like [DIY Robocars](http://diyrobocars.com)
@@ -27,38 +34,3 @@ community contributions.
 
 ### Get driving.
 After building a Donkey2 you can turn on your car and go to http://localhost:8887 to drive.
-
-### Modify your cars behavior.
-The donkey car is controlled by running a sequence of events
-
-```python
-#Define a vehicle to take and record pictures 10 times per second.
-
-import time
-from donkeycar import Vehicle
-from donkeycar.parts.cv import CvCam
-from donkeycar.parts.tub_v2 import TubWriter
-V = Vehicle()
-
-IMAGE_W = 160
-IMAGE_H = 120
-IMAGE_DEPTH = 3
-
-#Add a camera part
-cam = CvCam(image_w=IMAGE_W, image_h=IMAGE_H, image_d=IMAGE_DEPTH)
-V.add(cam, outputs=['image'], threaded=True)
-
-#warmup camera
-while cam.run() is None:
-    time.sleep(1)
-
-#add tub part to record images
-tub = TubWriter(path='./dat', inputs=['image'], types=['image_array'])
-V.add(tub, inputs=['image'], outputs=['num_records'])
-
-#start the drive loop at 10 Hz
-V.start(rate_hz=10)
-```
-
-See [home page](http://donkeycar.com), [docs](http://docs.donkeycar.com)
-or join the [Discord server](http://www.donkeycar.com/community.html) to learn more.
