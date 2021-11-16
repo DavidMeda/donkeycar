@@ -29,6 +29,7 @@ from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv2DTranspose
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.losses import *
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
@@ -106,20 +107,33 @@ class KerasPilot(ABC):
         """
         pass
 
-    def evaluate(self, record: TubRecord,
-                 augmentation: 'ImageAugmentation' = None) \
-            -> Tuple[Union[float, np.ndarray], ...]:
-        # extract model input from record
-        x0 = self.x_transform(record)
-        x1 = x0[0] if isinstance(x0, tuple) else x0
-        # apply augmentation to training data only
-        x2 = augmentation.augment(x1) if augmentation else x1
-        # normalise image, assume other input data comes already normalised
-        x3 = normalize_image(x2)
-        if isinstance(x0, tuple):
-            return self.inference(x3, *x0[1:])
-        else:
-            return self.inference(x3, None)
+    # def evaluate(self, record: TubRecord,
+    #              augmentation: 'ImageAugmentation' = None) \
+    #         -> Tuple[Union[float, np.ndarray], ...]:
+    #     # extract model input from record
+    #     x0 = self.x_transform(record)
+    #     x1 = x0[0] if isinstance(x0, tuple) else x0
+    #     # apply augmentation to training data only
+    #     x2 = augmentation.augment(x1) if augmentation else x1
+    #     # normalise image, assume other input data comes already normalised
+    #     x3 = normalize_image(x2)
+    #     if isinstance(x0, tuple):
+    #         return self.inference(x3, *x0[1:])
+    #     else:
+    #         return self.inference(x3, None)
+    def evaluate(self, 
+                test_data: 'BatchSequence',
+                batch_size: int,
+                steps: int,
+                return_dict: bool=True
+                ):
+        model = self._get_train_model()
+        result = model.evaluate(x=test_data,
+                                batch_size=batch_size,
+                                return_dict=return_dict,
+                                steps=steps)
+
+        return result
 
     def train(self,
               model_path: str,
@@ -140,9 +154,9 @@ class KerasPilot(ABC):
         self.compile()
 
         callbacks = [
-            # EarlyStopping(monitor='val_loss',
-            #               patience=patience,
-            #               min_delta=min_delta),
+            EarlyStopping(monitor='val_loss',
+                          patience=patience,
+                          min_delta=min_delta),
             ModelCheckpoint(monitor='val_loss',
                             filepath=model_path,
                             save_best_only=True,
@@ -317,7 +331,8 @@ class MyLoss(Loss):
     def call(self, y_true, y_pred):
         # return tf.cond(tf.less(tf.abs(y_pred[0]), 0.1), lambda: ((1/2)+tf.math.exp(tf.abs(y_true)))*tf.abs(y_true-y_pred), lambda: (1+tf.math.exp(tf.abs(y_true)))*tf.abs(y_true-y_pred))
         return (1+tf.math.exp(tf.abs(y_true)))*tf.abs(y_true-y_pred)
-        
+
+
 class KerasLinear(KerasPilot):
     """
     The KerasLinear pilot uses one neuron to output a continous value via the
@@ -327,11 +342,16 @@ class KerasLinear(KerasPilot):
     def __init__(self, num_outputs=2, input_shape=(120, 160, 3)):
         super().__init__()
         self.model = default_n_linear(num_outputs, input_shape)
-        self.loss = MyLoss()
+        # self.loss = MyLoss()
+        self.loss = MeanSquaredError()
+        # self.loss = MeanAbsoluteError()
         # self.loss = SteeringLoss(1.0,1.0,1.0)
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer, loss=self.loss)
+        self.model.compile(optimizer=self.optimizer,
+                           loss=self.loss, metrics=[MeanSquaredError(), MeanAbsoluteError(), 
+                                                    MeanAbsolutePercentageError(), MeanSquaredLogarithmicError(),
+                                                    CosineSimilarity(), LogCosh()])
 
     def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
@@ -342,12 +362,14 @@ class KerasLinear(KerasPilot):
         # print("output: ", outputs)
         # print("Throttle: ", throttle[0][0], " Steering: ", steering[0][0])
         return steering[0][0], throttle[0][0]
+    
+
 
     def load(self, model_path: str) -> None:
-        print(f'Loading model {model_path} with SteeringLoss')
+        print(f'Loading model {model_path}')
         self.model = keras.models.load_model(model_path, compile=False, custom_objects={
             'loss':self.loss})
-        
+
     def y_transform(self, record: TubRecord):
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
@@ -356,7 +378,7 @@ class KerasLinear(KerasPilot):
     def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
         if isinstance(y, tuple):
             angle, throttle = y
-            return {'n_outputs0': angle, 'n_outputs1': throttle}
+            return {'steering_out': angle, 'throttle_out': throttle}
         else:
             raise TypeError('Expected tuple')
 
@@ -364,8 +386,8 @@ class KerasLinear(KerasPilot):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape()[1:]
         shapes = ({'img_in': tf.TensorShape(img_shape)},
-                  {'n_outputs0': tf.TensorShape([]),
-                   'n_outputs1': tf.TensorShape([])})
+                  {'steering_out': tf.TensorShape([]),
+                   'throttle_out': tf.TensorShape([])})
         return shapes
 
 
@@ -560,12 +582,10 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3)):
     x = Dense(50, activation='relu', name='dense_2')(x)
     x = Dropout(drop)(x)
 
-    outputs = []
-    for i in range(num_outputs):
-        outputs.append(
-            Dense(1, activation='linear', name='n_outputs' + str(i))(x))
-
-    model = Model(inputs=[img_in], outputs=outputs)
+    # for i in range(num_outputs):
+    steering_out = Dense(1, activation='linear', name='steering_out')(x)
+    throttle_out = Dense(1, activation='linear', name='throttle_out')(x)
+    model = Model(inputs=[img_in], outputs=[steering_out, throttle_out])
     return model
 
 
@@ -675,9 +695,12 @@ class KerasRNN_LSTM(KerasPilot):
         self.seq_length = seq_length
         self.img_seq = []
         self.optimizer = "rmsprop"
+        self.loss = MyLoss()
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer, loss='mse')
+        self.model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[MeanSquaredError(), MeanAbsoluteError(),
+                                                                              MeanSquaredLogarithmicError(),
+                                                                              CosineSimilarity(), LogCosh()])
 
     def inference(self, img_arr, other_arr):
         if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
@@ -695,6 +718,11 @@ class KerasRNN_LSTM(KerasPilot):
         steering = outputs[0][0]
         throttle = outputs[0][1]
         return steering, throttle
+
+    def load(self, model_path: str) -> None:
+        print(f'Loading model {model_path}')
+        self.model = keras.models.load_model(model_path, compile=False, custom_objects={
+            'loss': self.loss})
 
 
 def rnn_lstm(seq_length=3, num_outputs=2, input_shape=(120, 160, 3)):

@@ -92,6 +92,7 @@ class TubDataset(object):
         # self.records.clear()
         train_data_list = []
         val_data_list = []
+        test_data_list = []
         
         for tub in self.tubs:
             angle_values = []
@@ -106,14 +107,29 @@ class TubDataset(object):
             dt['user/angle'] = angle_values
             dt['record'] = record_dict
             bins_index = pd.cut(dt['user/angle'], 11, labels=False)
-            train,  validation, _, _ = train_test_split(
+            record_train,  record_test, angle_train, angle_test = train_test_split(
                 dt['record'], dt['user/angle'], stratify=bins_index, test_size=(1. - self.config.TRAIN_TEST_SPLIT))
+            # print(type(record_test))
+            # print(record_test)
+            test_data = [TubRecord(self.config, tub.base_path, a)
+                         for a in record_test]
+            # print(test_data[0])
+            bins_index = pd.cut(angle_train, 11, labels=False)
+            train,  validation, _, _ = train_test_split(
+                record_train, angle_train, stratify=bins_index, test_size=(1. - self.config.TRAIN_TEST_SPLIT))
             train_data = [TubRecord(self.config, tub.base_path, a) for a in train]
             val_data = [TubRecord(self.config, tub.base_path, a) for a in validation]
+            
+            test_data_list.extend(test_data)
             train_data_list.extend(train_data)
             val_data_list.extend(val_data)
+        #     print("tot: ", len(tub))
+        # print("len test: ", len(test_data_list))
+        # print("len train: ", len(train_data_list))
+        # print("len valid: ", len(val_data_list))
         
-        return train_data_list, val_data_list
+        return train_data_list, val_data_list, test_data_list
+       
         # return train_test_split(self.records, shuffle=self.shuffle,
         #                         test_size=(1. - self.config.TRAIN_TEST_SPLIT))
 

@@ -422,7 +422,7 @@ def get_model_by_type(model_type: str, cfg: 'Config', model_path: str) -> 'Keras
     create a Keras model and return it.
     '''
     from donkeycar.parts.keras import KerasPilot, KerasCategorical, \
-        KerasLinear, KerasInferred
+        KerasLinear, KerasInferred, KerasRNN_LSTM
     from donkeycar.parts.tflite import TFLitePilot
 
     if model_type is None:
@@ -453,6 +453,9 @@ def get_model_by_type(model_type: str, cfg: 'Config', model_path: str) -> 'Keras
     elif model_type == "lane_model":
         from donkeycar.parts.lane_model import LaneModel
         kl = LaneModel(cfg, input_shape=input_shape)
+    elif model_type == "rnn_lstm":
+        kl = KerasRNN_LSTM(input_shape=input_shape,
+                           seq_length=3, num_outputs=2)
     # pytorch models
     elif model_type=="resnet18":
         from donkeycar.parts.pytorch.torch_utils import get_model_by_type

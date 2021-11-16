@@ -128,24 +128,30 @@ def train(cfg: Config, tub_paths: str, model: str = None, model_type: str = None
     tubs = tub_paths.split(',')
     all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
     dataset = TubDataset(cfg, all_tub_paths)
-    training_records, validation_records = dataset.train_test_split()
+    training_records, validation_records, test_records = dataset.train_test_split()
     print(f'Records # Training {len(training_records)}')
     print(f'Records # Validation {len(validation_records)}')
+    print(f'Records # Test {len(test_records)}')
+
 
     training_pipe = BatchSequence(kl, cfg, training_records, is_train=True)
     validation_pipe = BatchSequence(kl, cfg, validation_records, is_train=False)
-    print(f'Records # BATCH Training {len(training_pipe)}')
-    print(f'Records # BATCH Validation {len(validation_pipe)}')
-    
-    #generators
-    dataset_train = training_pipe.create_tf_data().prefetch(
-        tf.data.experimental.AUTOTUNE)
-    dataset_validate = validation_pipe.create_tf_data().prefetch(
-        tf.data.experimental.AUTOTUNE)
+    test_pipe = BatchSequence(kl, cfg, test_records, is_train=False)
+
+
     train_size = len(training_pipe)
     val_size = len(validation_pipe)
-    print(f'DATASET #  Training {train_size}')
-    print(f'DATASET #  Validation {val_size}')
+    test_size = len(test_pipe)
+    print(f'Records # BATCH Training {train_size}')
+    print(f'Records # BATCH Validation {val_size}')
+    print(f'Records # BATCH Testing {test_size}')
+
+    
+    #generators
+    dataset_train = training_pipe.create_tf_data().prefetch(tf.data.experimental.AUTOTUNE)
+    dataset_validate = validation_pipe.create_tf_data().prefetch(tf.data.experimental.AUTOTUNE)
+    dataset_test = test_pipe.create_tf_data().prefetch(tf.data.experimental.AUTOTUNE)
+    
 
     assert val_size > 0, "Not enough validation data, decrease the batch " \
                          "size or add more data."
@@ -166,7 +172,28 @@ def train(cfg: Config, tub_paths: str, model: str = None, model_type: str = None
     if is_tflite:
         tf_lite_model_path = f'{base_path}.tflite'
         keras_model_to_tflite(model_path, tf_lite_model_path)
+    
+    print("\nEvaluate on test data\n")
+    result = kl.evaluate(test_data=dataset_test,
+                        batch_size=cfg.BATCH_SIZE,
+                        steps=test_size)
+    
+    print("\nresult dict:",result)
 
+    # print("Evaluate on test data")
+    # mse_streering = []
+    # mse_throttle = []
+    # for record in test_records:
+    #     steering, throttle = kl.evaluate(record)
+    #     mse_streering.append(steering)
+    #     mse_throttle.append(throttle)
+
+    # mean_steering = np.average(mse_streering)
+    # mean_throttle = np.average(mse_throttle)
+    # print("MSE steering test: ", mean_steering)
+    # print("MSE throttle test: ", mean_throttle)
+
+    # return None
     # database write
     database_entry = {
         'Number': model_num,
@@ -175,6 +202,11 @@ def train(cfg: Config, tub_paths: str, model: str = None, model_type: str = None
         'Tubs': tub_paths,
         'Time': time()-first_time,
         'History': history.history,
+        'result Test set': result,
+        # 'MSE steering': mse_streering,
+        # 'MSE throttle': mse_throttle,
+        # 'MSE steering mean': mean_steering,
+        # 'MSE throttle mean': mean_throttle,
         'Transfer': os.path.basename(transfer) if transfer else None,
         'Comment': comment,
         'Config': str(cfg)
