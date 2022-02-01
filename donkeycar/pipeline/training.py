@@ -167,12 +167,13 @@ def train(cfg: Config, tub_paths: str, model: str = None, model_type: str = None
                        min_delta=cfg.MIN_DELTA,
                        patience=cfg.EARLY_STOP_PATIENCE,
                        show_plot=cfg.SHOW_PLOT)
-    
     base_path = os.path.splitext(model_path)[0]
     if is_tflite:
         tf_lite_model_path = f'{base_path}.tflite'
         keras_model_to_tflite(model_path, tf_lite_model_path)
-    
+    print("BASE PATH", base_path)
+    print("MODEL PATH", model_path)
+    kl.save(model_path+"ultimate.h5")
     print("\nEvaluate on test data\n")
     result = kl.evaluate(test_data=dataset_test,
                         batch_size=cfg.BATCH_SIZE,

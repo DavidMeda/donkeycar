@@ -1,9 +1,12 @@
-tests/tub/*
 .vs/
 env/*
 data/*
 dist/*
 a
+mycar/data/*
+mycar/models/*
+mycar/info script.txt
+mycar/unitylog.txt
 
 *.pyc
 .ipynb_checkpoints

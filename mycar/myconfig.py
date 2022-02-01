@@ -126,12 +126,12 @@ TRAIN_TEST_SPLIT = 0.9          #what percent of records to use for training.
 MAX_EPOCHS = 200                #how many times to visit all records of
 # your data
 # SHOW_PLOT = True                #would you like to see a pop up display of final loss?
-# VERBOSE_TRAIN = True            #would you like to see a progress bar with text during training?
+VERBOSE_TRAIN = True            #would you like to see a progress bar with text during training?
 USE_EARLY_STOP = False           #would you like to stop the training if we see it's not improving fit?
 EARLY_STOP_PATIENCE = 20         #how many epochs to wait before no improvement
 MIN_DELTA = .000001             #early stop will want this much loss change
 # before calling it improved.
-# PRINT_MODEL_SUMMARY = True      #print layers and weights to stdout
+PRINT_MODEL_SUMMARY = False      #print layers and weights to stdout
 OPTIMIZER = 'adam'                #adam, sgd, rmsprop, etc.. None accepts default
 LEARNING_RATE = 0.0001           #only used when OPTIMIZER specified
 LEARNING_RATE_DECAY = 0.1       #only used when OPTIMIZER specified
@@ -313,7 +313,8 @@ PREPROCESS_IMAGE = False
 # #You will want to download the simulator binary from: https://github.com/tawnkramer/donkey_gym/releases/download/v18.9/DonkeySimLinux.zip
 # #then extract that and modify DONKEY_SIM_PATH.
 DONKEY_GYM = True
-DONKEY_SIM_PATH = "D:/DonkeySimWin/DonkeySimWin2/DonkeySimWin/donkey_sim.exe" #when racing on virtual-race-league use "remote", or user "remote" when you want to start the sim manually first.
+# when racing on virtual-race-league use "remote", or user "remote" when you want to start the sim manually first.
+DONKEY_SIM_PATH = "C:\\Users\\david\\Documents\\project\\DonkeySimWin\\v21.07\\donkey_sim.exe"
 #DONKEY_SIM_PATH = "D:/DonkeySimWin/DonkeySimWin/donkey_sim.exe" #when racing on virtual-race-league use "remote", or user "remote" when you want to start the sim manually first.
 DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
 GYM_CONF = { "body_style" : "donkey", "body_rgb" : (128, 128, 128), "car_name" : "schumacher", "font_size" : 10} # body style(donkey|bare|car01) body rgb 0-255
