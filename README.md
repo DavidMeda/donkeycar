@@ -16,13 +16,6 @@ community contributions.
 
 ![donkeycar](./docs/assets/build_hardware/donkey2.png)
 
-#### My usage
-
-This project is used for my Master degree thesis.
-
-
-
-
 #### Use Donkey if you want to:
 * Make an RC car drive its self.
 * Compete in self driving races like [DIY Robocars](http://diyrobocars.com)
@@ -32,5 +25,17 @@ This project is used for my Master degree thesis.
 * Leverage community contributed driving data.
 * Use existing CAD models for design upgrades.
 
-### Get driving.
-After building a Donkey2 you can turn on your car and go to http://localhost:8887 to drive.
+#### My usage
+
+This project is used for my Master degree thesis.
+
+#### Start
+Go to /mycar
+Usage:
+
+```
+manage.py drive [--model=<model>] [--js] [--type=(linear|categorical)] [--camera=(single|stereo)] [--meta=<key:value> ...] [--myconfig=<filename>]
+```
+
+#### Get driving.
+After building a Donkey2 you can turn on your car and go to http://localhost:8887 to drive
